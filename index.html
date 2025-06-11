@@ -3,17 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Background Remover - Remove.bg</title>
+    <title>Aurora BgRemover - Remove Backgrounds Instantly</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Aurora Background -->
+    <div class="aurora-background">
+        <div class="aurora-layer aurora-layer-1"></div>
+        <div class="aurora-layer aurora-layer-2"></div>
+        <div class="aurora-layer aurora-layer-3"></div>
+    </div>
+    
+    <!-- Liquid Splash Container -->
+    <div class="liquid-container" id="liquidContainer"></div>
+    
     <div class="container">
         <header class="header">
-            <h1 class="title">Background Remover</h1>
-            <p class="subtitle">Remove backgrounds from your images instantly</p>
+            <h1 class="title">Aurora BgRemover</h1>
+            <p class="subtitle">Remove backgrounds from your images with aurora-powered AI</p>
         </header>
 
         <main class="main">
@@ -64,14 +74,24 @@
             <!-- Result Section -->
             <div class="result-section" id="resultSection" style="display: none;">
                 <div class="result-container">
-                    <div class="image-comparison">
-                        <div class="image-container">
-                            <h4>Original</h4>
-                            <img id="originalImage" alt="Original image">
+                    <div class="image-comparison-container">
+                        <div class="comparison-wrapper">
+                            <img id="resultImage" alt="Background removed image" class="comparison-image result-img">
+                            <img id="originalImage" alt="Original image" class="comparison-image original-img">
+                            <div class="comparison-overlay" id="comparisonOverlay">
+                                <div class="hold-instruction">
+                                    <span class="hold-text">Hold to see original</span>
+                                    <div class="hold-icon">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M9 12l2 2 4-4"/>
+                                            <circle cx="12" cy="12" r="10"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="image-container">
-                            <h4>Background Removed</h4>
-                            <img id="resultImage" alt="Background removed image">
+                        <div class="comparison-labels">
+                            <span class="current-view" id="currentViewLabel">Background Removed</span>
                         </div>
                     </div>
                     <div class="result-actions">

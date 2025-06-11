@@ -18,14 +18,19 @@ const downloadBtn = document.getElementById('downloadBtn');
 const newImageBtn = document.getElementById('newImageBtn');
 const retryBtn = document.getElementById('retryBtn');
 const errorMessage = document.getElementById('errorMessage');
+const comparisonOverlay = document.getElementById('comparisonOverlay');
+const currentViewLabel = document.getElementById('currentViewLabel');
 
 // State
 let currentImageBlob = null;
 let currentImageName = 'background-removed.png';
+let isHolding = false;
+let holdTimeout = null;
 
 // Initialize the app
 document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
+    initializeLiquidEffects();
 });
 
 function setupEventListeners() {
@@ -50,6 +55,9 @@ function setupEventListeners() {
     downloadBtn.addEventListener('click', handleDownload);
     newImageBtn.addEventListener('click', resetApp);
     retryBtn.addEventListener('click', resetApp);
+    
+    // Setup comparison events
+    setupComparisonEvents();
     
     // Prevent default drag behaviors on document
     document.addEventListener('dragover', (e) => e.preventDefault());
@@ -329,4 +337,119 @@ function addVisualFeedback() {
 }
 
 // Initialize visual feedback
-document.addEventListener('DOMContentLoaded', addVisualFeedback); 
+document.addEventListener('DOMContentLoaded', addVisualFeedback);
+
+// Setup comparison events for hold-to-compare functionality
+function setupComparisonEvents() {
+    const comparisonWrapper = document.querySelector('.comparison-wrapper');
+    
+    if (!comparisonWrapper) return;
+    
+    // Mouse events
+    comparisonWrapper.addEventListener('mousedown', startHolding);
+    comparisonWrapper.addEventListener('mouseup', stopHolding);
+    comparisonWrapper.addEventListener('mouseleave', stopHolding);
+    
+    // Touch events for mobile
+    comparisonWrapper.addEventListener('touchstart', startHolding, { passive: false });
+    comparisonWrapper.addEventListener('touchend', stopHolding);
+    comparisonWrapper.addEventListener('touchcancel', stopHolding);
+    
+    // Prevent context menu on right click
+    comparisonWrapper.addEventListener('contextmenu', (e) => e.preventDefault());
+}
+
+function startHolding(e) {
+    e.preventDefault();
+    
+    if (isHolding) return;
+    
+    isHolding = true;
+    const comparisonWrapper = document.querySelector('.comparison-wrapper');
+    
+    // Add active class for visual feedback
+    comparisonWrapper.classList.add('active');
+    
+    // Show original image
+    originalImage.classList.add('show');
+    currentViewLabel.textContent = 'Original';
+    currentViewLabel.classList.add('showing-original');
+    
+    // Add slight delay to prevent accidental triggers
+    holdTimeout = setTimeout(() => {
+        if (isHolding) {
+            // Additional feedback can be added here
+            console.log('Hold confirmed');
+        }
+    }, 100);
+}
+
+function stopHolding(e) {
+    if (!isHolding) return;
+    
+    isHolding = false;
+    const comparisonWrapper = document.querySelector('.comparison-wrapper');
+    
+    // Clear timeout
+    if (holdTimeout) {
+        clearTimeout(holdTimeout);
+        holdTimeout = null;
+    }
+    
+    // Remove active class
+    comparisonWrapper.classList.remove('active');
+    
+    // Hide original image
+    originalImage.classList.remove('show');
+    currentViewLabel.textContent = 'Background Removed';
+    currentViewLabel.classList.remove('showing-original');
+}
+
+// Initialize liquid splash effects
+function initializeLiquidEffects() {
+    const liquidContainer = document.getElementById('liquidContainer');
+    let splashCount = 0;
+    const maxSplashes = 10;
+    
+    // Mouse move event for liquid effects
+    document.addEventListener('mousemove', (e) => {
+        // Throttle the effect to prevent too many splashes
+        if (Math.random() > 0.95) {
+            createLiquidSplash(e.clientX, e.clientY, liquidContainer);
+        }
+    });
+    
+    // Click event for bigger splash
+    document.addEventListener('click', (e) => {
+        createLiquidSplash(e.clientX, e.clientY, liquidContainer, true);
+    });
+    
+    function createLiquidSplash(x, y, container, isBig = false) {
+        if (splashCount >= maxSplashes) return;
+        
+        const splash = document.createElement('div');
+        splash.className = 'liquid-splash';
+        
+        if (isBig) {
+            splash.style.background = `radial-gradient(circle, 
+                rgba(64, 224, 208, 0.6) 0%, 
+                rgba(138, 43, 226, 0.5) 30%,
+                rgba(255, 20, 147, 0.4) 60%, 
+                transparent 100%)`;
+        }
+        
+        splash.style.left = x + 'px';
+        splash.style.top = y + 'px';
+        
+        container.appendChild(splash);
+        splashCount++;
+        
+        // Remove splash after animation
+        setTimeout(() => {
+            if (splash.parentNode) {
+                splash.parentNode.removeChild(splash);
+                splashCount--;
+            }
+        }, 1500);
+    }
+} 
