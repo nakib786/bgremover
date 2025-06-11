@@ -1,5 +1,7 @@
 // Enhanced Vercel serverless function to proxy remove.bg API with all features
-const API_KEY = process.env.REMOVE_BG_API_KEY || 'UdJecRQczjcUyQytSsqM3xd5';
+import formidable from 'formidable';
+
+const REMOVE_BG_API_KEY = process.env.REMOVE_BG_API_KEY;
 const REMOVE_BG_API_URL = 'https://api.remove.bg/v1.0/removebg';
 
 // Disable automatic body parsing
@@ -8,6 +10,211 @@ export const config = {
         bodyParser: false,
     },
 };
+
+// Helper function to get form data value
+function getFormValue(fields, key) {
+    const value = fields[key];
+    return Array.isArray(value) ? value[0] : value;
+}
+
+// Helper function to get file from files object
+function getFormFile(files, key) {
+    const file = files[key];
+    return Array.isArray(file) ? file[0] : file;
+}
+
+// Feature-specific parameter mapping
+function buildRemoveBgParams(fields, files) {
+    const params = new FormData();
+    
+    // Get the main image file
+    const imageFile = getFormFile(files, 'image_file');
+    if (imageFile) {
+        const fs = require('fs');
+        const imageBuffer = fs.readFileSync(imageFile.filepath);
+        const blob = new Blob([imageBuffer], { type: imageFile.mimetype });
+        params.append('image_file', blob, imageFile.originalFilename);
+    }
+
+    // Basic parameters
+    params.append('size', getFormValue(fields, 'size') || 'auto');
+    const format = getFormValue(fields, 'format') || 'png';
+    params.append('format', format);
+
+    // Feature-specific parameters
+    const featureType = getFormValue(fields, 'feature') || 'background-removal';
+    
+    switch (featureType) {
+        case 'background-removal':
+            // Standard background removal - no additional params needed
+            break;
+
+        case 'magic-brush':
+            // Use ROI for precision editing
+            const roi = getFormValue(fields, 'roi');
+            if (roi) {
+                params.append('roi', roi);
+            }
+            break;
+
+        case 'custom-background':
+            // Add custom background image
+            const bgImageFile = getFormFile(files, 'bg_image_file');
+            if (bgImageFile) {
+                const fs = require('fs');
+                const bgBuffer = fs.readFileSync(bgImageFile.filepath);
+                const bgBlob = new Blob([bgBuffer], { type: bgImageFile.mimetype });
+                params.append('bg_image_file', bgBlob, bgImageFile.originalFilename);
+            }
+            break;
+
+        case 'blur-background':
+            // Simulate blur with background color and scaling
+            params.append('bg_color', 'f0f0f0');
+            params.append('crop', 'true');
+            params.append('scale', '80%');
+            params.append('position', 'center');
+            break;
+
+        case 'ai-shadow':
+            // Add shadow parameters
+            const shadowType = getFormValue(fields, 'shadow_type') || 'natural';
+            const shadowOpacity = getFormValue(fields, 'shadow_opacity') || '50';
+            params.append('shadow_type', shadowType);
+            params.append('shadow_opacity', shadowOpacity);
+            break;
+
+        case 'product-photo':
+            // Product-specific optimization
+            params.append('type', 'product');
+            params.append('crop', 'true');
+            params.append('crop_margin', '5%');
+            
+            // Add shadow if requested
+            const addShadow = getFormValue(fields, 'add_shadow');
+            if (addShadow === 'true') {
+                params.append('shadow_type', 'drop');
+                params.append('shadow_opacity', '30');
+            }
+            break;
+
+        case 'background-color':
+            // Add solid background color
+            const bgColor = getFormValue(fields, 'bg_color');
+            if (bgColor) {
+                params.append('bg_color', bgColor.replace('#', ''));
+            }
+            break;
+
+        case 'video-background':
+            // For video, use ZIP format for better performance
+            params.set('format', 'zip');
+            break;
+
+        case 'logo-background':
+            // Optimize for graphics/logos
+            params.append('type', 'graphic');
+            params.append('crop', 'true');
+            params.append('crop_margin', '2%');
+            break;
+
+        case 'sky-replacer':
+            // Sky replacement with ROI focusing on upper portion
+            params.append('roi', '0% 0% 100% 60%');
+            
+            const skyType = getFormValue(fields, 'sky_type');
+            if (skyType && skyType !== 'custom') {
+                const skyColors = {
+                    'blue': '87CEEB',
+                    'cloudy': 'D3D3D3', 
+                    'sunset': 'FF6B35',
+                    'dramatic': '2F4F4F'
+                };
+                params.append('bg_color', skyColors[skyType] || '87CEEB');
+            } else if (skyType === 'custom') {
+                const skyFile = getFormFile(files, 'sky_upload');
+                if (skyFile) {
+                    const fs = require('fs');
+                    const skyBuffer = fs.readFileSync(skyFile.filepath);
+                    const skyBlob = new Blob([skyBuffer], { type: skyFile.mimetype });
+                    params.append('bg_image_file', skyBlob, skyFile.originalFilename);
+                }
+            }
+            break;
+
+        case 'signature-background':
+            // Optimize for text/signatures
+            params.append('type', 'graphic');
+            params.append('crop', 'true');
+            params.append('crop_margin', '10px');
+            break;
+
+        case 'cv-photo':
+            // Professional headshot optimization
+            params.append('type', 'person');
+            params.append('crop', 'true');
+            params.append('crop_margin', '15%');
+            params.append('scale', '85%');
+            params.append('position', 'center');
+            
+            const cvBgColor = getFormValue(fields, 'cv_bg_color');
+            if (cvBgColor && cvBgColor !== 'transparent') {
+                params.append('bg_color', cvBgColor.replace('#', ''));
+            }
+            break;
+
+        case 'car-photo':
+            // Automotive-specific processing
+            params.append('type', 'car');
+            
+            const carShadow = getFormValue(fields, 'car_shadow');
+            if (carShadow === 'true') {
+                params.append('shadow_type', 'natural');
+                params.append('shadow_opacity', '40');
+            }
+            
+            const carSemitransparency = getFormValue(fields, 'car_semitransparency');
+            if (carSemitransparency === 'true') {
+                params.append('semitransparency', 'true');
+            }
+            break;
+
+        case 'youtube-thumbnail':
+            // Thumbnail optimization
+            params.append('scale', '90%');
+            params.append('position', 'center');
+            
+            const thumbnailBg = getFormValue(fields, 'thumbnail_bg');
+            if (thumbnailBg === 'solid') {
+                const thumbnailColor = getFormValue(fields, 'thumbnail_color');
+                if (thumbnailColor) {
+                    params.append('bg_color', thumbnailColor.replace('#', ''));
+                }
+            } else if (thumbnailBg === 'gradient') {
+                params.append('bg_color', 'FF6B6B');
+            }
+            break;
+
+        default:
+            // Default to standard background removal
+            break;
+    }
+
+    // Add any additional custom parameters
+    const additionalParams = [
+        'crop', 'crop_margin', 'scale', 'position', 'channels', 
+        'semitransparency', 'type', 'type_level'
+    ];
+    
+    additionalParams.forEach(param => {
+        const value = getFormValue(fields, param);
+        if (value && !params.has(param)) {
+            params.append(param, value);
+        }
+    });
+
+    return params;
+}
 
 export default async function handler(req, res) {
     // Add CORS headers
@@ -25,196 +232,106 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
+    if (!REMOVE_BG_API_KEY) {
+        return res.status(500).json({ error: 'Remove.bg API key not configured' });
+    }
+
     try {
-        // Validate content type
-        const contentType = req.headers['content-type'];
-        if (!contentType || !contentType.includes('multipart/form-data')) {
-            return res.status(400).json({ 
-                error: 'Invalid content type. Expected multipart/form-data' 
+        // Parse the incoming form data
+        const form = formidable({
+            maxFileSize: 50 * 1024 * 1024, // 50MB for videos
+            maxTotalFileSize: 100 * 1024 * 1024, // 100MB total
+            keepExtensions: true,
+            multiples: true
+        });
+
+        const [fields, files] = await form.parse(req);
+
+        // Check if we have an image file
+        const imageFile = getFormFile(files, 'image_file');
+        if (!imageFile) {
+            return res.status(400).json({ error: 'No image file provided' });
+        }
+
+        // Validate file size (5MB for images, 50MB for videos)
+        const featureType = getFormValue(fields, 'feature') || 'background-removal';
+        const maxSize = featureType === 'video-background' ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
+        
+        if (imageFile.size > maxSize) {
+            return res.status(413).json({ 
+                error: `File too large. Maximum size is ${maxSize / (1024 * 1024)}MB` 
             });
         }
 
-        // Read the raw body
-        const chunks = [];
-        for await (const chunk of req) {
-            chunks.push(chunk);
-        }
-        const body = Buffer.concat(chunks);
+        // Build parameters for remove.bg API
+        const formData = buildRemoveBgParams(fields, files);
 
-        // Parse the feature type from the request
-        const bodyString = body.toString();
-        const featureMatch = bodyString.match(/name="feature"\r?\n\r?\n([^\r\n]+)/);
-        const feature = featureMatch ? featureMatch[1] : 'remove-bg';
-
-        // Determine the appropriate API endpoint and parameters
-        let apiUrl = REMOVE_BG_API_URL;
-        let processedBody = body;
-
-        // Handle different features
-        switch (feature) {
-            case 'remove-bg':
-                // Standard background removal - no changes needed
-                break;
-                
-            case 'magic-brush':
-                // Magic brush uses the same endpoint with specific parameters
-                break;
-                
-            case 'custom-bg':
-            case 'bg-color':
-                // Background replacement - uses same endpoint with bg_color or bg_image_file
-                break;
-                
-            case 'blur-bg':
-                // Background blur - simulated by removing background then adding blur effect
-                break;
-                
-            case 'ai-shadow':
-                // AI shadow - uses shadow parameters
-                break;
-                
-            case 'product-editor':
-                // Product photo editing - uses type parameter
-                break;
-                
-            case 'car-editor':
-                // Car photo editing - uses type=car parameter
-                processedBody = addParameterToFormData(body, 'type', 'car');
-                break;
-                
-            case 'cv-photo':
-                // CV photo - uses type=person parameter
-                processedBody = addParameterToFormData(body, 'type', 'person');
-                break;
-                
-            case 'signature-bg':
-            case 'logo-bg':
-                // Logo/signature removal - uses type=other parameter
-                processedBody = addParameterToFormData(body, 'type', 'other');
-                break;
-                
-            case 'sky-replacer':
-                // Sky replacement - uses type=other with specific handling
-                processedBody = addParameterToFormData(body, 'type', 'other');
-                break;
-                
-            case 'youtube-thumbnail':
-                // YouTube thumbnail - optimized for thumbnails
-                processedBody = addParameterToFormData(body, 'type', 'person');
-                processedBody = addParameterToFormData(processedBody, 'format', 'png');
-                break;
-                
-            case 'video-bg':
-                // Video background removal - not supported by remove.bg API
-                return res.status(400).json({ 
-                    error: 'Video background removal not supported',
-                    details: 'This feature requires video processing capabilities not available in the current API'
-                });
-                
-            case 'batch-edit':
-                // Batch editing - handled on frontend, single API calls
-                break;
-                
-            default:
-                // Default to standard background removal
-                break;
-        }
-
-        console.log('Processing feature:', feature);
-        console.log('API URL:', apiUrl);
-
-        // Forward the request to remove.bg API
-        const response = await fetch(apiUrl, {
+        // Make request to remove.bg API
+        const response = await fetch('https://api.remove.bg/v1.0/removebg', {
             method: 'POST',
             headers: {
-                'X-Api-Key': API_KEY,
-                'Content-Type': contentType,
-                'Content-Length': processedBody.length.toString()
+                'X-Api-Key': REMOVE_BG_API_KEY,
             },
-            body: processedBody
+            body: formData
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Remove.bg API error:', response.status, errorText);
+            let errorMessage = `Remove.bg API error: ${response.status}`;
             
-            // Try to parse error as JSON for better error messages
-            let errorDetails;
             try {
-                errorDetails = JSON.parse(errorText);
-            } catch {
-                errorDetails = { message: errorText };
+                const errorText = await response.text();
+                const errorData = JSON.parse(errorText);
+                errorMessage = errorData.errors?.[0]?.title || errorData.error || errorMessage;
+            } catch (e) {
+                // If we can't parse the error, use the status text
+                errorMessage = response.statusText || errorMessage;
             }
-            
-            return res.status(response.status).json({ 
-                error: 'API request failed',
-                details: errorDetails.errors?.[0]?.title || errorDetails.message || errorText,
-                feature: feature
+
+            // Handle specific error codes
+            if (response.status === 402) {
+                errorMessage = 'Insufficient credits. Please check your remove.bg account.';
+            } else if (response.status === 403) {
+                errorMessage = 'Invalid API key or access denied.';
+            } else if (response.status === 429) {
+                errorMessage = 'Rate limit exceeded. Please try again later.';
+            }
+
+            return res.status(response.status).json({ error: errorMessage });
+        }
+
+        // Get the processed image
+        const imageBuffer = await response.arrayBuffer();
+        
+        // Set appropriate headers
+        const contentType = response.headers.get('content-type') || 'image/png';
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Length', imageBuffer.byteLength);
+        
+        // Add feature context to response headers
+        res.setHeader('X-Feature-Type', featureType);
+        res.setHeader('X-Processing-Status', 'success');
+
+        // Send the processed image
+        res.send(Buffer.from(imageBuffer));
+
+    } catch (error) {
+        console.error('API Error:', error);
+        
+        // Handle specific error types
+        if (error.code === 'LIMIT_FILE_SIZE') {
+            return res.status(413).json({ 
+                error: 'File too large. Please use a smaller image.' 
+            });
+        }
+        
+        if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+            return res.status(503).json({ 
+                error: 'Service temporarily unavailable. Please try again later.' 
             });
         }
 
-        // Get the image data
-        const imageBuffer = await response.arrayBuffer();
-        
-        // Apply post-processing based on feature
-        let finalBuffer = Buffer.from(imageBuffer);
-        
-        if (feature === 'blur-bg') {
-            // For blur background, we would need additional processing
-            // This is a placeholder - actual blur would require image processing library
-            console.log('Blur background processing would be applied here');
-        }
-        
-        // Set appropriate headers for image response
-        res.setHeader('Content-Type', 'image/png');
-        res.setHeader('Content-Length', finalBuffer.length);
-        res.setHeader('X-Feature-Used', feature);
-        
-        // Send the processed image
-        return res.status(200).send(finalBuffer);
-
-    } catch (error) {
-        console.error('Error in enhanced remove-bg proxy:', error);
         return res.status(500).json({ 
-            error: 'Internal server error',
-            message: error.message 
+            error: 'Internal server error. Please try again.' 
         });
-    }
-}
-
-// Helper function to add parameters to FormData
-function addParameterToFormData(buffer, paramName, paramValue) {
-    try {
-        const boundary = extractBoundary(buffer);
-        if (!boundary) return buffer;
-        
-        const newParam = `\r\n--${boundary}\r\nContent-Disposition: form-data; name="${paramName}"\r\n\r\n${paramValue}`;
-        const endBoundary = `\r\n--${boundary}--`;
-        
-        // Find the end boundary and insert new parameter before it
-        const bufferString = buffer.toString();
-        const endIndex = bufferString.lastIndexOf(`--${boundary}--`);
-        
-        if (endIndex === -1) return buffer;
-        
-        const beforeEnd = bufferString.substring(0, endIndex);
-        const newContent = beforeEnd + newParam + endBoundary;
-        
-        return Buffer.from(newContent);
-    } catch (error) {
-        console.error('Error adding parameter to FormData:', error);
-        return buffer;
-    }
-}
-
-// Helper function to extract boundary from multipart data
-function extractBoundary(buffer) {
-    try {
-        const bufferString = buffer.toString('ascii', 0, 200);
-        const boundaryMatch = bufferString.match(/boundary=([^\r\n]+)/);
-        return boundaryMatch ? boundaryMatch[1] : null;
-    } catch (error) {
-        console.error('Error extracting boundary:', error);
-        return null;
     }
 } 

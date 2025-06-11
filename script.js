@@ -2,21 +2,21 @@
 const API_URL = '/api/remove-bg';
 
 // DOM Elements
-const uploadSection = document.getElementById('uploadSection');
-const loadingSection = document.getElementById('loadingSection');
-const resultSection = document.getElementById('resultSection');
-const batchResultsSection = document.getElementById('batchResultsSection');
+const uploadSection = document.getElementById('upload-section');
+const loadingSection = document.getElementById('loading-section');
+const resultSection = document.getElementById('result-section');
+const batchResultsSection = document.getElementById('batch-section');
 const errorSection = document.getElementById('errorSection');
-const featureOptions = document.getElementById('featureOptions');
+const featureOptions = document.getElementById('feature-options');
 
-const dropZone = document.getElementById('dropZone');
-const fileInput = document.getElementById('fileInput');
+const dropZone = document.getElementById('upload-area');
+const fileInput = document.getElementById('file-input');
 const urlInput = document.getElementById('urlInput');
 const urlSubmit = document.getElementById('urlSubmit');
 
 const originalImage = document.getElementById('originalImage');
-const resultImage = document.getElementById('resultImage');
-const downloadBtn = document.getElementById('downloadBtn');
+const resultImage = document.getElementById('result-image');
+const downloadBtn = document.getElementById('download-btn');
 const newImageBtn = document.getElementById('newImageBtn');
 const retryBtn = document.getElementById('retryBtn');
 const errorMessage = document.getElementById('errorMessage');
@@ -25,11 +25,11 @@ const currentViewLabel = document.getElementById('currentViewLabel');
 
 // Feature-specific elements
 const featureTabs = document.querySelectorAll('.tab-btn');
-const featureDescriptionText = document.getElementById('featureDescriptionText');
-const uploadTitle = document.getElementById('uploadTitle');
-const uploadSubtitle = document.getElementById('uploadSubtitle');
-const loadingTitle = document.getElementById('loadingTitle');
-const loadingSubtitle = document.getElementById('loadingSubtitle');
+const featureDescriptionText = document.getElementById('feature-description');
+const uploadTitle = document.getElementById('upload-title');
+const uploadSubtitle = document.getElementById('upload-subtitle');
+const loadingTitle = document.getElementById('loading-title');
+const loadingSubtitle = document.getElementById('loading-subtitle');
 
 // Feature options elements
 const bgColorPicker = document.getElementById('bgColorPicker');
@@ -48,36 +48,109 @@ const batchDropZone = document.getElementById('batchDropZone');
 const batchProgress = document.getElementById('batchProgress');
 const progressFill = document.getElementById('progressFill');
 const progressText = document.getElementById('progressText');
-const batchResultsGrid = document.getElementById('batchResultsGrid');
+const batchResultsGrid = document.getElementById('batch-results');
 const downloadAllBtn = document.getElementById('downloadAllBtn');
 const newBatchBtn = document.getElementById('newBatchBtn');
 
 // State
-let currentFeature = 'remove-bg';
-let currentImageBlob = null;
-let currentImageName = 'processed-image.png';
-let currentBackgroundFile = null;
+let currentFeature = 'background-removal';
+let selectedFiles = [];
 let batchResults = [];
 let isHolding = false;
 let holdTimeout = null;
 
-// Feature descriptions
+// Feature descriptions with proper functionality
 const featureDescriptions = {
-    'remove-bg': 'Remove backgrounds from your images instantly with AI-powered precision',
-    'magic-brush': 'Precisely edit and remove specific parts of your image with AI magic brush',
-    'custom-bg': 'Replace backgrounds with your own custom images for perfect compositions',
-    'blur-bg': 'Create professional depth-of-field effects by blurring the background',
-    'ai-shadow': 'Add realistic AI-generated shadows to make your subjects look natural',
-    'product-editor': 'Optimize product photos for e-commerce with professional editing',
-    'batch-edit': 'Process multiple images at once to save time on bulk editing tasks',
-    'bg-color': 'Replace backgrounds with solid colors for clean, professional looks',
-    'video-bg': 'Remove backgrounds from video files (coming soon)',
-    'logo-bg': 'Remove backgrounds from logos and graphics for transparent designs',
-    'sky-replacer': 'Replace skies in landscape photos with dramatic new backgrounds',
-    'signature-bg': 'Remove backgrounds from signatures for document processing',
-    'cv-photo': 'Create professional CV photos with perfect backgrounds',
-    'car-editor': 'Enhance car photos with professional automotive editing',
-    'youtube-thumbnail': 'Create eye-catching YouTube thumbnails with perfect backgrounds'
+    'background-removal': {
+        title: 'Background Removal',
+        description: 'Remove backgrounds from images with AI precision. Perfect for product photos, portraits, and creating transparent images.',
+        uploadTitle: 'Upload Image for Background Removal',
+        loadingTitle: 'Removing Background...'
+    },
+    'magic-brush': {
+        title: 'Magic Brush',
+        description: 'Manually refine background removal with precision brush tools. Paint to keep or remove specific areas.',
+        uploadTitle: 'Upload Image for Magic Brush Editing',
+        loadingTitle: 'Processing with Magic Brush...'
+    },
+    'custom-background': {
+        title: 'Custom Background',
+        description: 'Replace backgrounds with your own images. Upload a background image to create stunning compositions.',
+        uploadTitle: 'Upload Image and Background',
+        loadingTitle: 'Adding Custom Background...'
+    },
+    'blur-background': {
+        title: 'Blur Background',
+        description: 'Create professional depth-of-field effects by blurring the background while keeping the subject sharp.',
+        uploadTitle: 'Upload Image for Background Blur',
+        loadingTitle: 'Blurring Background...'
+    },
+    'ai-shadow': {
+        title: 'AI Shadow',
+        description: 'Add realistic shadows to your subjects. Perfect for product photography and creating natural-looking compositions.',
+        uploadTitle: 'Upload Image for AI Shadow',
+        loadingTitle: 'Adding AI Shadow...'
+    },
+    'product-photo': {
+        title: 'Product Photo Editor',
+        description: 'Optimize product images for e-commerce. Remove backgrounds, add shadows, and enhance for online stores.',
+        uploadTitle: 'Upload Product Image',
+        loadingTitle: 'Optimizing Product Photo...'
+    },
+    'batch-editing': {
+        title: 'Batch Editing',
+        description: 'Process multiple images at once. Upload up to 10 images and apply the same edits to all.',
+        uploadTitle: 'Upload Multiple Images (Max 10)',
+        loadingTitle: 'Processing Batch...'
+    },
+    'background-color': {
+        title: 'Add Background Color',
+        description: 'Replace backgrounds with solid colors. Choose from presets or pick custom colors for your images.',
+        uploadTitle: 'Upload Image for Color Background',
+        loadingTitle: 'Adding Background Color...'
+    },
+    'video-background': {
+        title: 'Remove Video Background',
+        description: 'Remove backgrounds from video frames. Extract frames, process them, and create transparent videos.',
+        uploadTitle: 'Upload Video for Background Removal',
+        loadingTitle: 'Processing Video Frames...'
+    },
+    'logo-background': {
+        title: 'Remove Logo Background',
+        description: 'Perfect for logos and graphics. Remove backgrounds while preserving crisp edges and transparency.',
+        uploadTitle: 'Upload Logo Image',
+        loadingTitle: 'Removing Logo Background...'
+    },
+    'sky-replacer': {
+        title: 'Sky Replacer',
+        description: 'Replace skies in landscape photos. Transform cloudy days into perfect blue skies or dramatic sunsets.',
+        uploadTitle: 'Upload Landscape Image',
+        loadingTitle: 'Replacing Sky...'
+    },
+    'signature-background': {
+        title: 'Remove Signature Background',
+        description: 'Clean up scanned signatures and handwritten text. Remove paper backgrounds for digital use.',
+        uploadTitle: 'Upload Signature Image',
+        loadingTitle: 'Cleaning Signature...'
+    },
+    'cv-photo': {
+        title: 'Create CV Photo',
+        description: 'Create professional headshots for resumes and profiles. Remove backgrounds and optimize for professional use.',
+        uploadTitle: 'Upload Portrait for CV',
+        loadingTitle: 'Creating CV Photo...'
+    },
+    'car-photo': {
+        title: 'Car Photo Editor',
+        description: 'Specialized for automotive photography. Remove backgrounds, add shadows, and enhance car images.',
+        uploadTitle: 'Upload Car Image',
+        loadingTitle: 'Editing Car Photo...'
+    },
+    'youtube-thumbnail': {
+        title: 'Create YouTube Thumbnail',
+        description: 'Design eye-catching YouTube thumbnails. Remove backgrounds and create engaging preview images.',
+        uploadTitle: 'Upload Image for Thumbnail',
+        loadingTitle: 'Creating Thumbnail...'
+    }
 };
 
 // Initialize the app
@@ -86,12 +159,13 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeLiquidEffects();
     initializeFeatureTabs();
     initializeFeatureOptions();
+    updateFeatureContent();
 });
 
 function setupEventListeners() {
     // File input events
     dropZone.addEventListener('click', () => {
-        if (currentFeature === 'batch-edit') {
+        if (currentFeature === 'batch-editing') {
             batchFileInput.click();
         } else {
             fileInput.click();
@@ -192,7 +266,10 @@ function switchFeature(feature) {
     });
     
     // Update description
-    featureDescriptionText.textContent = featureDescriptions[feature] || featureDescriptions['remove-bg'];
+    if (featureDescriptionText) {
+        const featureData = featureDescriptions[feature] || featureDescriptions['background-removal'];
+        featureDescriptionText.innerHTML = `<h3>${featureData.title}</h3><p>${featureData.description}</p>`;
+    }
     
     // Update UI text based on feature
     updateUIText(feature);
@@ -206,7 +283,7 @@ function switchFeature(feature) {
 
 function updateUIText(feature) {
     const textMappings = {
-        'remove-bg': {
+        'background-removal': {
             uploadTitle: 'Drop your image here',
             uploadSubtitle: 'or click to browse files',
             loadingTitle: 'Removing background...',
@@ -220,14 +297,14 @@ function updateUIText(feature) {
             loadingSubtitle: 'AI is working its magic',
             resultLabel: 'Magic Brush Applied'
         },
-        'custom-bg': {
+        'custom-background': {
             uploadTitle: 'Drop your main image here',
             uploadSubtitle: 'then upload a background below',
             loadingTitle: 'Adding custom background...',
             loadingSubtitle: 'Compositing images together',
             resultLabel: 'Custom Background Added'
         },
-        'blur-bg': {
+        'blur-background': {
             uploadTitle: 'Drop your image here',
             uploadSubtitle: 'to blur the background',
             loadingTitle: 'Blurring background...',
@@ -241,26 +318,54 @@ function updateUIText(feature) {
             loadingSubtitle: 'Generating realistic shadows',
             resultLabel: 'AI Shadow Added'
         },
-        'batch-edit': {
+        'product-photo': {
+            uploadTitle: 'Drop your product image here',
+            uploadSubtitle: 'for product photo optimization',
+            loadingTitle: 'Optimizing product photo...',
+            loadingSubtitle: 'Enhancing product image',
+            resultLabel: 'Product Photo Optimized'
+        },
+        'batch-editing': {
             uploadTitle: 'Drop multiple images here',
             uploadSubtitle: 'for batch processing',
             loadingTitle: 'Processing batch...',
             loadingSubtitle: 'Working on multiple images',
             resultLabel: 'Batch Processed'
         },
-        'bg-color': {
+        'background-color': {
             uploadTitle: 'Drop your image here',
             uploadSubtitle: 'to add colored background',
             loadingTitle: 'Adding background color...',
             loadingSubtitle: 'Applying color background',
             resultLabel: 'Background Color Added'
         },
-        'car-editor': {
-            uploadTitle: 'Drop your car image here',
-            uploadSubtitle: 'for automotive editing',
-            loadingTitle: 'Enhancing car photo...',
-            loadingSubtitle: 'Optimizing automotive image',
-            resultLabel: 'Car Photo Enhanced'
+        'video-background': {
+            uploadTitle: 'Drop your video here',
+            uploadSubtitle: 'for video background removal',
+            loadingTitle: 'Processing video frames...',
+            loadingSubtitle: 'Extracting frames',
+            resultLabel: 'Video Background Removed'
+        },
+        'logo-background': {
+            uploadTitle: 'Drop your logo image here',
+            uploadSubtitle: 'for logo background removal',
+            loadingTitle: 'Removing logo background...',
+            loadingSubtitle: 'Preserving crisp edges',
+            resultLabel: 'Logo Background Removed'
+        },
+        'sky-replacer': {
+            uploadTitle: 'Drop your landscape image here',
+            uploadSubtitle: 'for sky replacement',
+            loadingTitle: 'Replacing sky...',
+            loadingSubtitle: 'Transforming skies',
+            resultLabel: 'Sky Replaced'
+        },
+        'signature-background': {
+            uploadTitle: 'Drop your signature image here',
+            uploadSubtitle: 'for signature background removal',
+            loadingTitle: 'Cleaning signature...',
+            loadingSubtitle: 'Removing paper background',
+            resultLabel: 'Signature Background Removed'
         },
         'cv-photo': {
             uploadTitle: 'Drop your portrait here',
@@ -268,10 +373,24 @@ function updateUIText(feature) {
             loadingTitle: 'Creating CV photo...',
             loadingSubtitle: 'Preparing professional portrait',
             resultLabel: 'CV Photo Ready'
+        },
+        'car-photo': {
+            uploadTitle: 'Drop your car image here',
+            uploadSubtitle: 'for automotive editing',
+            loadingTitle: 'Enhancing car photo...',
+            loadingSubtitle: 'Optimizing automotive image',
+            resultLabel: 'Car Photo Enhanced'
+        },
+        'youtube-thumbnail': {
+            uploadTitle: 'Drop your image here',
+            uploadSubtitle: 'for thumbnail creation',
+            loadingTitle: 'Creating thumbnail...',
+            loadingSubtitle: 'Designing eye-catching thumbnail',
+            resultLabel: 'YouTube Thumbnail Created'
         }
     };
     
-    const texts = textMappings[feature] || textMappings['remove-bg'];
+    const texts = textMappings[feature] || textMappings['background-removal'];
     
     uploadTitle.textContent = texts.uploadTitle;
     uploadSubtitle.textContent = texts.uploadSubtitle;
@@ -287,27 +406,27 @@ function updateFeatureOptions(feature) {
     });
     
     // Show feature options container if needed
-    const hasOptions = ['custom-bg', 'blur-bg', 'ai-shadow', 'bg-color', 'product-editor', 'batch-edit'].includes(feature);
+    const hasOptions = ['custom-background', 'blur-background', 'ai-shadow', 'background-color', 'product-photo', 'batch-editing'].includes(feature);
     featureOptions.style.display = hasOptions ? 'block' : 'none';
     
     // Show specific options based on feature
     switch (feature) {
-        case 'custom-bg':
+        case 'custom-background':
             document.getElementById('customBgOptions').style.display = 'block';
             break;
-        case 'blur-bg':
+        case 'blur-background':
             document.getElementById('blurOptions').style.display = 'block';
             break;
         case 'ai-shadow':
             document.getElementById('shadowOptions').style.display = 'block';
             break;
-        case 'bg-color':
+        case 'background-color':
             document.getElementById('bgColorOptions').style.display = 'block';
             break;
-        case 'product-editor':
+        case 'product-photo':
             document.getElementById('productOptions').style.display = 'block';
             break;
-        case 'batch-edit':
+        case 'batch-editing':
             document.getElementById('batchOptions').style.display = 'block';
             break;
     }
@@ -335,27 +454,27 @@ function handleDrop(e) {
     
     const files = e.dataTransfer.files;
     if (files.length > 0) {
-        if (currentFeature === 'batch-edit') {
+        if (currentFeature === 'batch-editing') {
             handleBatchFiles(files);
         } else {
             const file = files[0];
-            if (isValidImageFile(file)) {
-                processImageFile(file);
-            } else {
+            if (!isValidImageFile(file)) {
                 showError('Please select a valid image file (JPG, PNG, GIF, BMP, WebP)');
+                return;
             }
+            if (file.size > 5 * 1024 * 1024) {
+                showError('Image file is too large. Maximum size is 5MB. Please compress your image or use a smaller file.');
+                return;
+            }
+            processImageFile(file);
         }
     }
 }
 
 // File Selection Handlers
 function handleFileSelect(e) {
-    const file = e.target.files[0];
-    if (file && isValidImageFile(file)) {
-        processImageFile(file);
-    } else if (file) {
-        showError('Please select a valid image file (JPG, PNG, GIF, BMP, WebP)');
-    }
+    const files = Array.from(e.target.files);
+    handleFiles(files);
 }
 
 function handleBatchFileSelect(e) {
@@ -417,9 +536,9 @@ async function processImageFile(file) {
         const originalUrl = URL.createObjectURL(file);
         originalImage.src = originalUrl;
         
-        // Validate file size (max 12MB for remove.bg)
-        if (file.size > 12 * 1024 * 1024) {
-            throw new Error('Image file is too large. Maximum size is 12MB.');
+        // Validate file size (max 5MB to avoid server limits)
+        if (file.size > 5 * 1024 * 1024) {
+            throw new Error('Image file is too large. Maximum size is 5MB. Please compress your image or use a smaller file.');
         }
 
         // Create FormData for API request
@@ -552,8 +671,8 @@ async function processBatchImages(files) {
 
 async function processSingleBatchImage(file) {
     // Validate file size
-    if (file.size > 12 * 1024 * 1024) {
-        throw new Error(`${file.name}: File too large (max 12MB)`);
+    if (file.size > 5 * 1024 * 1024) {
+        throw new Error(`${file.name}: File too large (max 5MB)`);
     }
 
     // Create FormData for API request
@@ -581,17 +700,17 @@ function createFormData(file) {
     
     // Add feature-specific parameters
     switch (currentFeature) {
-        case 'custom-bg':
+        case 'custom-background':
             if (currentBackgroundFile) {
                 formData.append('bg_image_file', currentBackgroundFile);
             }
             break;
-        case 'bg-color':
+        case 'background-color':
             if (bgColorPicker) {
                 formData.append('bg_color', bgColorPicker.value.replace('#', ''));
             }
             break;
-        case 'blur-bg':
+        case 'blur-background':
             if (blurIntensity) {
                 formData.append('blur_intensity', blurIntensity.value);
             }
@@ -604,7 +723,7 @@ function createFormData(file) {
                 formData.append('shadow_opacity', shadowOpacity.value);
             }
             break;
-        case 'product-editor':
+        case 'product-photo':
             if (productType) {
                 formData.append('type', productType.value);
             }
@@ -622,12 +741,12 @@ function createFormDataFromUrl(url) {
     
     // Add feature-specific parameters (same as createFormData)
     switch (currentFeature) {
-        case 'bg-color':
+        case 'background-color':
             if (bgColorPicker) {
                 formData.append('bg_color', bgColorPicker.value.replace('#', ''));
             }
             break;
-        case 'blur-bg':
+        case 'blur-background':
             if (blurIntensity) {
                 formData.append('blur_intensity', blurIntensity.value);
             }
@@ -640,7 +759,7 @@ function createFormDataFromUrl(url) {
                 formData.append('shadow_opacity', shadowOpacity.value);
             }
             break;
-        case 'product-editor':
+        case 'product-photo':
             if (productType) {
                 formData.append('type', productType.value);
             }
@@ -832,15 +951,10 @@ function isValidImageUrl(url) {
 
 async function getErrorMessage(response) {
     try {
-        const errorData = await response.json();
-        
-        // Handle specific remove.bg error codes
+        // Handle specific HTTP status codes first
         switch (response.status) {
-            case 400:
-                if (errorData.details) {
-                    return errorData.details;
-                }
-                return errorData.error || 'Invalid image format or size. Please try a different image.';
+            case 413:
+                return 'Image file is too large for the server. Please use an image smaller than 5MB.';
             case 402:
                 return 'API credit limit exceeded. Please try again later.';
             case 403:
@@ -848,13 +962,55 @@ async function getErrorMessage(response) {
             case 429:
                 return 'Too many requests. Please wait a moment and try again.';
             case 500:
-                return errorData.message || errorData.details || 'Server error. Please try again.';
-            default:
-                return errorData.details || errorData.error || errorData.message || `Server error (${response.status}). Please try again.`;
+                return 'Server error. Please try again in a few moments.';
+            case 502:
+            case 503:
+            case 504:
+                return 'Service temporarily unavailable. Please try again later.';
+        }
+
+        // Try to parse JSON response for detailed error messages
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            
+            switch (response.status) {
+                case 400:
+                    if (errorData.details) {
+                        return errorData.details;
+                    }
+                    return errorData.error || 'Invalid image format or size. Please try a different image.';
+                default:
+                    return errorData.details || errorData.error || errorData.message || `Server error (${response.status}). Please try again.`;
+            }
+        } else {
+            // Non-JSON response, return generic message based on status
+            return `Server error (${response.status}). Please try again.`;
         }
     } catch (parseError) {
         console.error('Error parsing response:', parseError);
-        return `Network error (${response.status}). Please check your connection and try again.`;
+        
+        // Handle specific status codes even when JSON parsing fails
+        switch (response.status) {
+            case 413:
+                return 'Image file is too large for the server. Please use an image smaller than 5MB.';
+            case 400:
+                return 'Invalid image format or size. Please try a different image.';
+            case 402:
+                return 'API credit limit exceeded. Please try again later.';
+            case 403:
+                return 'Invalid API key or access denied.';
+            case 429:
+                return 'Too many requests. Please wait a moment and try again.';
+            case 500:
+                return 'Server error. Please try again in a few moments.';
+            case 502:
+            case 503:
+            case 504:
+                return 'Service temporarily unavailable. Please try again later.';
+            default:
+                return `Network error (${response.status}). Please check your connection and try again.`;
+        }
     }
 }
 
@@ -922,12 +1078,12 @@ function stopHolding(e) {
     
     // Reset label based on current feature
     const featureLabels = {
-        'remove-bg': 'Background Removed',
+        'background-removal': 'Background Removed',
         'magic-brush': 'Magic Brush Applied',
-        'custom-bg': 'Custom Background Added',
-        'blur-bg': 'Background Blurred',
+        'custom-background': 'Custom Background Added',
+        'blur-background': 'Background Blurred',
         'ai-shadow': 'AI Shadow Added',
-        'bg-color': 'Background Color Added'
+        'background-color': 'Background Color Added'
     };
     
     currentViewLabel.textContent = featureLabels[currentFeature] || 'Processed';

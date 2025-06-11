@@ -29,7 +29,7 @@
         <!-- Feature Selection Tabs -->
         <div class="feature-tabs" id="featureTabs">
             <div class="tab-container">
-                <button class="tab-btn active" data-feature="remove-bg">
+                <button class="tab-btn active" data-feature="background-removal">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                         <polyline points="7,10 12,15 17,10"/>
@@ -43,7 +43,7 @@
                     </svg>
                     Magic Brush
                 </button>
-                <button class="tab-btn" data-feature="custom-bg">
+                <button class="tab-btn" data-feature="custom-background">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                         <circle cx="8.5" cy="8.5" r="1.5"/>
@@ -51,7 +51,7 @@
                     </svg>
                     Custom Background
                 </button>
-                <button class="tab-btn" data-feature="blur-bg">
+                <button class="tab-btn" data-feature="blur-background">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"/>
                         <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
@@ -66,7 +66,7 @@
                     </svg>
                     AI Shadow
                 </button>
-                <button class="tab-btn" data-feature="product-editor">
+                <button class="tab-btn" data-feature="product-photo">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
                         <line x1="3" y1="6" x2="21" y2="6"/>
@@ -74,7 +74,7 @@
                     </svg>
                     Product Editor
                 </button>
-                <button class="tab-btn" data-feature="batch-edit">
+                <button class="tab-btn" data-feature="batch-editing">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                         <polyline points="14,2 14,8 20,8"/>
@@ -84,21 +84,21 @@
                     </svg>
                     Batch Editing
                 </button>
-                <button class="tab-btn" data-feature="bg-color">
+                <button class="tab-btn" data-feature="background-color">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                         <circle cx="12" cy="12" r="3"/>
                     </svg>
                     Background Color
                 </button>
-                <button class="tab-btn" data-feature="video-bg">
+                <button class="tab-btn" data-feature="video-background">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polygon points="23 7 16 12 23 17 23 7"/>
                         <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
                     </svg>
                     Video Background
                 </button>
-                <button class="tab-btn" data-feature="logo-bg">
+                <button class="tab-btn" data-feature="logo-background">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
                         <line x1="8" y1="21" x2="16" y2="21"/>
@@ -112,7 +112,7 @@
                     </svg>
                     Sky Replacer
                 </button>
-                <button class="tab-btn" data-feature="signature-bg">
+                <button class="tab-btn" data-feature="signature-background">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
                     </svg>
@@ -125,7 +125,7 @@
                     </svg>
                     CV Photo
                 </button>
-                <button class="tab-btn" data-feature="car-editor">
+                <button class="tab-btn" data-feature="car-photo">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18.4 9.6a2 2 0 0 0-1.6-1.4C16.3 8.2 14.1 8 12 8s-4.3.2-4.8.2c-.6.1-1.2.7-1.6 1.4L3.5 11.1C2.7 11.3 2 12.1 2 13v3c0 .6.4 1 1 1h2"/>
                         <circle cx="7" cy="17" r="2"/>
@@ -145,13 +145,14 @@
         </div>
 
         <!-- Feature Description -->
-        <div class="feature-description" id="featureDescription">
-            <p id="featureDescriptionText">Remove backgrounds from your images instantly with AI-powered precision</p>
+        <div class="feature-description" id="feature-description">
+            <h3>Background Removal</h3>
+            <p>Remove backgrounds from images with AI precision. Perfect for product photos, portraits, and creating transparent images.</p>
         </div>
 
         <main class="main">
             <!-- Feature-specific Options -->
-            <div class="feature-options" id="featureOptions" style="display: none;">
+            <div class="feature-options" id="feature-options" style="display: none;">
                 <!-- Background Color Options -->
                 <div class="option-group" id="bgColorOptions" style="display: none;">
                     <label>Background Color:</label>
@@ -225,11 +226,11 @@
                 </div>
             </div>
 
-            <div class="upload-section" id="uploadSection">
+            <div class="upload-section" id="upload-section">
                 <div class="upload-methods">
                     <!-- File Upload -->
                     <div class="upload-method">
-                        <div class="upload-area" id="dropZone">
+                        <div class="upload-area" id="upload-area">
                             <div class="upload-icon">
                                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -237,9 +238,10 @@
                                     <line x1="12" y1="15" x2="12" y2="3"/>
                                 </svg>
                             </div>
-                            <h3 id="uploadTitle">Drop your image here</h3>
-                            <p id="uploadSubtitle">or click to browse files</p>
-                            <input type="file" id="fileInput" accept="image/*" hidden>
+                            <h3 id="upload-title">Upload Image for Background Removal</h3>
+                            <p id="upload-subtitle">or click to browse files</p>
+                            <p class="file-size-hint" id="file-size-hint">Maximum file size: 5MB</p>
+                            <input type="file" id="file-input" accept="image/*" hidden>
                         </div>
                     </div>
 
@@ -263,37 +265,18 @@
             </div>
 
             <!-- Loading State -->
-            <div class="loading-section" id="loadingSection" style="display: none;">
+            <div class="loading-section" id="loading-section" style="display: none;">
                 <div class="loading-spinner"></div>
-                <h3 id="loadingTitle">Processing image...</h3>
-                <p id="loadingSubtitle">This may take a few seconds</p>
+                <h3 id="loading-title">Removing Background...</h3>
+                <p id="loading-subtitle">This may take a few seconds</p>
             </div>
 
             <!-- Result Section -->
-            <div class="result-section" id="resultSection" style="display: none;">
+            <div class="result-section" id="result-section" style="display: none;">
                 <div class="result-container">
-                    <div class="image-comparison-container">
-                        <div class="comparison-wrapper">
-                            <img id="resultImage" alt="Processed image" class="comparison-image result-img">
-                            <img id="originalImage" alt="Original image" class="comparison-image original-img">
-                            <div class="comparison-overlay" id="comparisonOverlay">
-                                <div class="hold-instruction">
-                                    <span class="hold-text">Hold to see original</span>
-                                    <div class="hold-icon">
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M9 12l2 2 4-4"/>
-                                            <circle cx="12" cy="12" r="10"/>
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="comparison-labels">
-                            <span class="current-view" id="currentViewLabel">Processed</span>
-                        </div>
-                    </div>
+                    <img id="result-image" alt="Processed image" class="result-image">
                     <div class="result-actions">
-                        <button id="downloadBtn" class="download-btn">
+                        <button id="download-btn" class="download-btn">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-15"/>
                                 <polyline points="7,10 12,15 17,10"/>
@@ -301,20 +284,20 @@
                             </svg>
                             Download Result
                         </button>
-                        <button id="newImageBtn" class="new-image-btn">Try Another Image</button>
+                        <button onclick="tryAgain()" class="new-image-btn">Try Another Image</button>
                     </div>
                 </div>
             </div>
 
-            <!-- Batch Results Section -->
-            <div class="batch-results-section" id="batchResultsSection" style="display: none;">
+            <!-- Batch Section -->
+            <div class="batch-section" id="batch-section" style="display: none;">
+                <div class="batch-progress" style="display: none;">
+                    <div class="batch-progress-bar"></div>
+                    <div class="batch-progress-text">Processing 0 of 0 images...</div>
+                </div>
                 <div class="batch-results-container">
                     <h3>Batch Processing Results</h3>
-                    <div class="batch-results-grid" id="batchResultsGrid"></div>
-                    <div class="batch-actions">
-                        <button id="downloadAllBtn" class="download-btn">Download All</button>
-                        <button id="newBatchBtn" class="new-image-btn">Process New Batch</button>
-                    </div>
+                    <div class="batch-results-grid" id="batch-results"></div>
                 </div>
             </div>
 
