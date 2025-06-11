@@ -220,9 +220,12 @@ function setupEventListeners() {
 }
 
 function initializeFeatureTabs() {
-    featureTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
+    const tabs = document.querySelectorAll('.tab-btn');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            e.preventDefault();
             const feature = tab.dataset.feature;
+            console.log('Tab clicked:', feature); // Debug log
             switchFeature(feature);
         });
     });
@@ -255,14 +258,42 @@ function initializeFeatureOptions() {
             shadowOpacityValue.textContent = shadowOpacity.value + '%';
         });
     }
+    
+    // Sky replacer events
+    const skyType = document.getElementById('skyType');
+    if (skyType) {
+        skyType.addEventListener('change', (e) => {
+            const customUpload = document.getElementById('customSkyUpload');
+            if (customUpload) {
+                customUpload.style.display = e.target.value === 'custom' ? 'block' : 'none';
+            }
+        });
+    }
+    
+    // YouTube thumbnail events
+    const thumbnailBg = document.getElementById('thumbnailBg');
+    if (thumbnailBg) {
+        thumbnailBg.addEventListener('change', (e) => {
+            const colorGroup = document.getElementById('thumbnailColorGroup');
+            if (colorGroup) {
+                colorGroup.style.display = e.target.value === 'solid' ? 'block' : 'none';
+            }
+        });
+    }
 }
 
 function switchFeature(feature) {
+    console.log('Switching to feature:', feature); // Debug log
     currentFeature = feature;
     
     // Update active tab
-    featureTabs.forEach(tab => {
-        tab.classList.toggle('active', tab.dataset.feature === feature);
+    const tabs = document.querySelectorAll('.tab-btn');
+    tabs.forEach(tab => {
+        if (tab.dataset.feature === feature) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
     });
     
     // Update description
@@ -392,11 +423,11 @@ function updateUIText(feature) {
     
     const texts = textMappings[feature] || textMappings['background-removal'];
     
-    uploadTitle.textContent = texts.uploadTitle;
-    uploadSubtitle.textContent = texts.uploadSubtitle;
-    loadingTitle.textContent = texts.loadingTitle;
-    loadingSubtitle.textContent = texts.loadingSubtitle;
-    currentViewLabel.textContent = texts.resultLabel;
+    if (uploadTitle) uploadTitle.textContent = texts.uploadTitle;
+    if (uploadSubtitle) uploadSubtitle.textContent = texts.uploadSubtitle;
+    if (loadingTitle) loadingTitle.textContent = texts.loadingTitle;
+    if (loadingSubtitle) loadingSubtitle.textContent = texts.loadingSubtitle;
+    if (currentViewLabel) currentViewLabel.textContent = texts.resultLabel;
 }
 
 function updateFeatureOptions(feature) {
@@ -406,8 +437,10 @@ function updateFeatureOptions(feature) {
     });
     
     // Show feature options container if needed
-    const hasOptions = ['custom-background', 'blur-background', 'ai-shadow', 'background-color', 'product-photo', 'batch-editing'].includes(feature);
-    featureOptions.style.display = hasOptions ? 'block' : 'none';
+    const hasOptions = ['custom-background', 'blur-background', 'ai-shadow', 'background-color', 'product-photo', 'batch-editing', 'sky-replacer', 'cv-photo', 'car-photo', 'youtube-thumbnail'].includes(feature);
+    if (featureOptions) {
+        featureOptions.style.display = hasOptions ? 'block' : 'none';
+    }
     
     // Show specific options based on feature
     switch (feature) {
@@ -428,6 +461,18 @@ function updateFeatureOptions(feature) {
             break;
         case 'batch-editing':
             document.getElementById('batchOptions').style.display = 'block';
+            break;
+        case 'sky-replacer':
+            document.getElementById('skyOptions').style.display = 'block';
+            break;
+        case 'cv-photo':
+            document.getElementById('cvOptions').style.display = 'block';
+            break;
+        case 'car-photo':
+            document.getElementById('carOptions').style.display = 'block';
+            break;
+        case 'youtube-thumbnail':
+            document.getElementById('thumbnailOptions').style.display = 'block';
             break;
     }
 }

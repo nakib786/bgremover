@@ -224,6 +224,67 @@
                         <span id="progressText">0 / 0 images processed</span>
                     </div>
                 </div>
+
+                <!-- Sky Replacer Options -->
+                <div class="option-group" id="skyOptions" style="display: none;">
+                    <label>Sky Type:</label>
+                    <select id="skyType">
+                        <option value="blue">Clear Blue Sky</option>
+                        <option value="cloudy">Cloudy Sky</option>
+                        <option value="sunset">Sunset</option>
+                        <option value="dramatic">Dramatic Clouds</option>
+                        <option value="custom">Custom Sky Image</option>
+                    </select>
+                    <div class="option-group" id="customSkyUpload" style="display: none; margin-top: 1rem;">
+                        <label>Sky Image:</label>
+                        <div class="bg-upload-area" id="skyDropZone">
+                            <input type="file" id="skyFileInput" accept="image/*" hidden>
+                            <span>Click to upload sky image</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CV Photo Options -->
+                <div class="option-group" id="cvOptions" style="display: none;">
+                    <label>Background Color:</label>
+                    <select id="cvBgColor">
+                        <option value="#ffffff">White</option>
+                        <option value="#f0f0f0">Light Gray</option>
+                        <option value="#e6f3ff">Light Blue</option>
+                        <option value="transparent">Transparent</option>
+                    </select>
+                    <label>Crop Style:</label>
+                    <select id="cvCrop">
+                        <option value="passport">Passport Style</option>
+                        <option value="headshot">Professional Headshot</option>
+                        <option value="square">Square Format</option>
+                    </select>
+                </div>
+
+                <!-- Car Photo Options -->
+                <div class="option-group" id="carOptions" style="display: none;">
+                    <label>
+                        <input type="checkbox" id="carShadow" checked> Add Car Shadow
+                    </label>
+                    <label>
+                        <input type="checkbox" id="carSemitransparency"> Semi-transparent Windows
+                    </label>
+                </div>
+
+                <!-- YouTube Thumbnail Options -->
+                <div class="option-group" id="thumbnailOptions" style="display: none;">
+                    <label>Background:</label>
+                    <select id="thumbnailBg">
+                        <option value="transparent">Transparent</option>
+                        <option value="gradient">Gradient</option>
+                        <option value="solid">Solid Color</option>
+                        <option value="custom">Custom Image</option>
+                    </select>
+                    <div class="option-group" id="thumbnailColorGroup" style="display: none; margin-top: 1rem;">
+                        <label>Color:</label>
+                        <input type="color" id="thumbnailColor" value="#ff0000">
+                    </div>
+                </div>
             </div>
 
             <div class="upload-section" id="upload-section">
