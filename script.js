@@ -119,11 +119,20 @@ async function processImageFile(file) {
         const originalUrl = URL.createObjectURL(file);
         originalImage.src = originalUrl;
         
+                // Validate file size (max 12MB for remove.bg)
+        if (file.size > 12 * 1024 * 1024) {
+            throw new Error('Image file is too large. Maximum size is 12MB.');
+        }
+
         // Create FormData for API request
         const formData = new FormData();
         formData.append('image_file', file);
         formData.append('size', 'auto');
-        
+
+        console.log('Sending request to:', API_URL);
+        console.log('File size:', file.size, 'bytes');
+        console.log('File type:', file.type);
+
         // Call remove.bg API via secure proxy
         const response = await fetch(API_URL, {
             method: 'POST',
@@ -158,11 +167,14 @@ async function processImageUrl(url) {
         // Show original image
         originalImage.src = url;
         
-        // Create FormData for API request
+                // Create FormData for API request
         const formData = new FormData();
         formData.append('image_url', url);
         formData.append('size', 'auto');
-        
+
+        console.log('Sending URL request to:', API_URL);
+        console.log('Image URL:', url);
+
         // Call remove.bg API via secure proxy
         const response = await fetch(API_URL, {
             method: 'POST',
@@ -274,7 +286,14 @@ async function getErrorMessage(response) {
         // Handle specific remove.bg error codes
         switch (response.status) {
             case 400:
-                return errorData.error || errorData.details || 'Invalid image format or size. Please try a different image.';
+                // Check for specific error details from our API proxy
+                if (errorData.details) {
+                    if (typeof errorData.details === 'string') {
+                        return errorData.details;
+                    }
+                    return errorData.details || 'Invalid image format or size. Please try a different image.';
+                }
+                return errorData.error || 'Invalid image format or size. Please try a different image.';
             case 402:
                 return 'API credit limit exceeded. Please try again later.';
             case 403:
@@ -282,11 +301,12 @@ async function getErrorMessage(response) {
             case 429:
                 return 'Too many requests. Please wait a moment and try again.';
             case 500:
-                return errorData.message || 'Server error. Please try again.';
+                return errorData.message || errorData.details || 'Server error. Please try again.';
             default:
-                return errorData.error || errorData.message || `Server error (${response.status}). Please try again.`;
+                return errorData.details || errorData.error || errorData.message || `Server error (${response.status}). Please try again.`;
         }
-    } catch {
+    } catch (parseError) {
+        console.error('Error parsing response:', parseError);
         return `Network error (${response.status}). Please check your connection and try again.`;
     }
 }
