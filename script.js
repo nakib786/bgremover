@@ -1,5 +1,7 @@
 // Enhanced API Configuration
 const API_URL = '/api/remove-bg';
+// If you want to use the remote API, uncomment the next line
+// const API_URL = 'https://bg.aurorabusiness.ca/api/remove-bg';
 
 // DOM Elements - will be initialized after DOM loads
 let uploadSection, loadingSection, resultSection, batchResultsSection, errorSection, featureOptions;
@@ -495,7 +497,7 @@ async function processImage(file) {
     addFeatureParameters(formData);
 
     try {
-        const response = await fetch('/api/remove-bg', {
+        const response = await fetch(API_URL, {
             method: 'POST',
             body: formData
         });
