@@ -1,5 +1,9 @@
 // Enhanced Vercel serverless function to proxy remove.bg API with all features
 import formidable from 'formidable';
+import * as dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
 
 const REMOVE_BG_API_KEY = process.env.REMOVE_BG_API_KEY;
 const REMOVE_BG_API_URL = 'https://api.remove.bg/v1.0/removebg';
@@ -221,6 +225,10 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    // Debug info
+    console.log('API Key Status:', REMOVE_BG_API_KEY ? 'API key is set' : 'API key is NOT set');
+    console.log('Environment Variables:', process.env.REMOVE_BG_API_KEY ? 'Found in process.env' : 'Not found in process.env');
 
     // Handle preflight requests
     if (req.method === 'OPTIONS') {
