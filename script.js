@@ -1,11 +1,13 @@
-// API Configuration - Using secure proxy
+// Enhanced API Configuration
 const API_URL = '/api/remove-bg';
 
 // DOM Elements
 const uploadSection = document.getElementById('uploadSection');
 const loadingSection = document.getElementById('loadingSection');
 const resultSection = document.getElementById('resultSection');
+const batchResultsSection = document.getElementById('batchResultsSection');
 const errorSection = document.getElementById('errorSection');
+const featureOptions = document.getElementById('featureOptions');
 
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
@@ -21,21 +23,80 @@ const errorMessage = document.getElementById('errorMessage');
 const comparisonOverlay = document.getElementById('comparisonOverlay');
 const currentViewLabel = document.getElementById('currentViewLabel');
 
+// Feature-specific elements
+const featureTabs = document.querySelectorAll('.tab-btn');
+const featureDescriptionText = document.getElementById('featureDescriptionText');
+const uploadTitle = document.getElementById('uploadTitle');
+const uploadSubtitle = document.getElementById('uploadSubtitle');
+const loadingTitle = document.getElementById('loadingTitle');
+const loadingSubtitle = document.getElementById('loadingSubtitle');
+
+// Feature options elements
+const bgColorPicker = document.getElementById('bgColorPicker');
+const bgFileInput = document.getElementById('bgFileInput');
+const bgDropZone = document.getElementById('bgDropZone');
+const blurIntensity = document.getElementById('blurIntensity');
+const blurValue = document.getElementById('blurValue');
+const shadowType = document.getElementById('shadowType');
+const shadowOpacity = document.getElementById('shadowOpacity');
+const shadowOpacityValue = document.getElementById('shadowOpacityValue');
+const productType = document.getElementById('productType');
+
+// Batch processing elements
+const batchFileInput = document.getElementById('batchFileInput');
+const batchDropZone = document.getElementById('batchDropZone');
+const batchProgress = document.getElementById('batchProgress');
+const progressFill = document.getElementById('progressFill');
+const progressText = document.getElementById('progressText');
+const batchResultsGrid = document.getElementById('batchResultsGrid');
+const downloadAllBtn = document.getElementById('downloadAllBtn');
+const newBatchBtn = document.getElementById('newBatchBtn');
+
 // State
+let currentFeature = 'remove-bg';
 let currentImageBlob = null;
-let currentImageName = 'background-removed.png';
+let currentImageName = 'processed-image.png';
+let currentBackgroundFile = null;
+let batchResults = [];
 let isHolding = false;
 let holdTimeout = null;
+
+// Feature descriptions
+const featureDescriptions = {
+    'remove-bg': 'Remove backgrounds from your images instantly with AI-powered precision',
+    'magic-brush': 'Precisely edit and remove specific parts of your image with AI magic brush',
+    'custom-bg': 'Replace backgrounds with your own custom images for perfect compositions',
+    'blur-bg': 'Create professional depth-of-field effects by blurring the background',
+    'ai-shadow': 'Add realistic AI-generated shadows to make your subjects look natural',
+    'product-editor': 'Optimize product photos for e-commerce with professional editing',
+    'batch-edit': 'Process multiple images at once to save time on bulk editing tasks',
+    'bg-color': 'Replace backgrounds with solid colors for clean, professional looks',
+    'video-bg': 'Remove backgrounds from video files (coming soon)',
+    'logo-bg': 'Remove backgrounds from logos and graphics for transparent designs',
+    'sky-replacer': 'Replace skies in landscape photos with dramatic new backgrounds',
+    'signature-bg': 'Remove backgrounds from signatures for document processing',
+    'cv-photo': 'Create professional CV photos with perfect backgrounds',
+    'car-editor': 'Enhance car photos with professional automotive editing',
+    'youtube-thumbnail': 'Create eye-catching YouTube thumbnails with perfect backgrounds'
+};
 
 // Initialize the app
 document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
     initializeLiquidEffects();
+    initializeFeatureTabs();
+    initializeFeatureOptions();
 });
 
 function setupEventListeners() {
     // File input events
-    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('click', () => {
+        if (currentFeature === 'batch-edit') {
+            batchFileInput.click();
+        } else {
+            fileInput.click();
+        }
+    });
     fileInput.addEventListener('change', handleFileSelect);
     
     // Drag and drop events
@@ -56,12 +117,205 @@ function setupEventListeners() {
     newImageBtn.addEventListener('click', resetApp);
     retryBtn.addEventListener('click', resetApp);
     
+    // Batch processing events
+    if (batchFileInput) {
+        batchFileInput.addEventListener('change', handleBatchFileSelect);
+    }
+    if (batchDropZone) {
+        batchDropZone.addEventListener('click', () => batchFileInput.click());
+    }
+    if (downloadAllBtn) {
+        downloadAllBtn.addEventListener('click', handleDownloadAll);
+    }
+    if (newBatchBtn) {
+        newBatchBtn.addEventListener('click', resetApp);
+    }
+    
+    // Background upload events
+    if (bgDropZone) {
+        bgDropZone.addEventListener('click', () => bgFileInput.click());
+        bgFileInput.addEventListener('change', handleBackgroundFileSelect);
+    }
+    
     // Setup comparison events
     setupComparisonEvents();
     
     // Prevent default drag behaviors on document
     document.addEventListener('dragover', (e) => e.preventDefault());
     document.addEventListener('drop', (e) => e.preventDefault());
+}
+
+function initializeFeatureTabs() {
+    featureTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const feature = tab.dataset.feature;
+            switchFeature(feature);
+        });
+    });
+}
+
+function initializeFeatureOptions() {
+    // Color picker events
+    if (bgColorPicker) {
+        bgColorPicker.addEventListener('change', updateColorPreview);
+    }
+    
+    // Color preset events
+    document.querySelectorAll('.color-preset').forEach(preset => {
+        preset.addEventListener('click', () => {
+            const color = preset.dataset.color;
+            bgColorPicker.value = color;
+            updateColorPreview();
+        });
+    });
+    
+    // Range input events
+    if (blurIntensity) {
+        blurIntensity.addEventListener('input', () => {
+            blurValue.textContent = blurIntensity.value;
+        });
+    }
+    
+    if (shadowOpacity) {
+        shadowOpacity.addEventListener('input', () => {
+            shadowOpacityValue.textContent = shadowOpacity.value + '%';
+        });
+    }
+}
+
+function switchFeature(feature) {
+    currentFeature = feature;
+    
+    // Update active tab
+    featureTabs.forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.feature === feature);
+    });
+    
+    // Update description
+    featureDescriptionText.textContent = featureDescriptions[feature] || featureDescriptions['remove-bg'];
+    
+    // Update UI text based on feature
+    updateUIText(feature);
+    
+    // Show/hide feature options
+    updateFeatureOptions(feature);
+    
+    // Reset app state
+    resetApp();
+}
+
+function updateUIText(feature) {
+    const textMappings = {
+        'remove-bg': {
+            uploadTitle: 'Drop your image here',
+            uploadSubtitle: 'or click to browse files',
+            loadingTitle: 'Removing background...',
+            loadingSubtitle: 'This may take a few seconds',
+            resultLabel: 'Background Removed'
+        },
+        'magic-brush': {
+            uploadTitle: 'Drop your image here',
+            uploadSubtitle: 'for magic brush editing',
+            loadingTitle: 'Applying magic brush...',
+            loadingSubtitle: 'AI is working its magic',
+            resultLabel: 'Magic Brush Applied'
+        },
+        'custom-bg': {
+            uploadTitle: 'Drop your main image here',
+            uploadSubtitle: 'then upload a background below',
+            loadingTitle: 'Adding custom background...',
+            loadingSubtitle: 'Compositing images together',
+            resultLabel: 'Custom Background Added'
+        },
+        'blur-bg': {
+            uploadTitle: 'Drop your image here',
+            uploadSubtitle: 'to blur the background',
+            loadingTitle: 'Blurring background...',
+            loadingSubtitle: 'Creating depth effect',
+            resultLabel: 'Background Blurred'
+        },
+        'ai-shadow': {
+            uploadTitle: 'Drop your image here',
+            uploadSubtitle: 'to add AI shadows',
+            loadingTitle: 'Adding AI shadows...',
+            loadingSubtitle: 'Generating realistic shadows',
+            resultLabel: 'AI Shadow Added'
+        },
+        'batch-edit': {
+            uploadTitle: 'Drop multiple images here',
+            uploadSubtitle: 'for batch processing',
+            loadingTitle: 'Processing batch...',
+            loadingSubtitle: 'Working on multiple images',
+            resultLabel: 'Batch Processed'
+        },
+        'bg-color': {
+            uploadTitle: 'Drop your image here',
+            uploadSubtitle: 'to add colored background',
+            loadingTitle: 'Adding background color...',
+            loadingSubtitle: 'Applying color background',
+            resultLabel: 'Background Color Added'
+        },
+        'car-editor': {
+            uploadTitle: 'Drop your car image here',
+            uploadSubtitle: 'for automotive editing',
+            loadingTitle: 'Enhancing car photo...',
+            loadingSubtitle: 'Optimizing automotive image',
+            resultLabel: 'Car Photo Enhanced'
+        },
+        'cv-photo': {
+            uploadTitle: 'Drop your portrait here',
+            uploadSubtitle: 'for CV photo creation',
+            loadingTitle: 'Creating CV photo...',
+            loadingSubtitle: 'Preparing professional portrait',
+            resultLabel: 'CV Photo Ready'
+        }
+    };
+    
+    const texts = textMappings[feature] || textMappings['remove-bg'];
+    
+    uploadTitle.textContent = texts.uploadTitle;
+    uploadSubtitle.textContent = texts.uploadSubtitle;
+    loadingTitle.textContent = texts.loadingTitle;
+    loadingSubtitle.textContent = texts.loadingSubtitle;
+    currentViewLabel.textContent = texts.resultLabel;
+}
+
+function updateFeatureOptions(feature) {
+    // Hide all option groups first
+    document.querySelectorAll('.option-group').forEach(group => {
+        group.style.display = 'none';
+    });
+    
+    // Show feature options container if needed
+    const hasOptions = ['custom-bg', 'blur-bg', 'ai-shadow', 'bg-color', 'product-editor', 'batch-edit'].includes(feature);
+    featureOptions.style.display = hasOptions ? 'block' : 'none';
+    
+    // Show specific options based on feature
+    switch (feature) {
+        case 'custom-bg':
+            document.getElementById('customBgOptions').style.display = 'block';
+            break;
+        case 'blur-bg':
+            document.getElementById('blurOptions').style.display = 'block';
+            break;
+        case 'ai-shadow':
+            document.getElementById('shadowOptions').style.display = 'block';
+            break;
+        case 'bg-color':
+            document.getElementById('bgColorOptions').style.display = 'block';
+            break;
+        case 'product-editor':
+            document.getElementById('productOptions').style.display = 'block';
+            break;
+        case 'batch-edit':
+            document.getElementById('batchOptions').style.display = 'block';
+            break;
+    }
+}
+
+function updateColorPreview() {
+    // Update color preview if needed
+    console.log('Background color updated:', bgColorPicker.value);
 }
 
 // Drag and Drop Handlers
@@ -81,16 +335,20 @@ function handleDrop(e) {
     
     const files = e.dataTransfer.files;
     if (files.length > 0) {
-        const file = files[0];
-        if (isValidImageFile(file)) {
-            processImageFile(file);
+        if (currentFeature === 'batch-edit') {
+            handleBatchFiles(files);
         } else {
-            showError('Please select a valid image file (JPG, PNG, GIF, BMP, WebP)');
+            const file = files[0];
+            if (isValidImageFile(file)) {
+                processImageFile(file);
+            } else {
+                showError('Please select a valid image file (JPG, PNG, GIF, BMP, WebP)');
+            }
         }
     }
 }
 
-// File Selection Handler
+// File Selection Handlers
 function handleFileSelect(e) {
     const file = e.target.files[0];
     if (file && isValidImageFile(file)) {
@@ -98,6 +356,38 @@ function handleFileSelect(e) {
     } else if (file) {
         showError('Please select a valid image file (JPG, PNG, GIF, BMP, WebP)');
     }
+}
+
+function handleBatchFileSelect(e) {
+    const files = e.target.files;
+    if (files.length > 0) {
+        handleBatchFiles(files);
+    }
+}
+
+function handleBackgroundFileSelect(e) {
+    const file = e.target.files[0];
+    if (file && isValidImageFile(file)) {
+        currentBackgroundFile = file;
+        bgDropZone.innerHTML = `<span>Background selected: ${file.name}</span>`;
+    } else if (file) {
+        showError('Please select a valid background image file');
+    }
+}
+
+function handleBatchFiles(files) {
+    const validFiles = Array.from(files).filter(isValidImageFile);
+    if (validFiles.length === 0) {
+        showError('Please select valid image files');
+        return;
+    }
+    
+    if (validFiles.length > 20) {
+        showError('Maximum 20 images allowed per batch');
+        return;
+    }
+    
+    processBatchImages(validFiles);
 }
 
 // URL Submit Handler
@@ -118,7 +408,7 @@ function handleUrlSubmit() {
 
 // Image Processing Functions
 async function processImageFile(file) {
-    currentImageName = file.name.replace(/\.[^/.]+$/, '') + '-background-removed.png';
+    currentImageName = generateFileName(file.name);
     
     try {
         showLoading();
@@ -127,21 +417,19 @@ async function processImageFile(file) {
         const originalUrl = URL.createObjectURL(file);
         originalImage.src = originalUrl;
         
-                // Validate file size (max 12MB for remove.bg)
+        // Validate file size (max 12MB for remove.bg)
         if (file.size > 12 * 1024 * 1024) {
             throw new Error('Image file is too large. Maximum size is 12MB.');
         }
 
         // Create FormData for API request
-        const formData = new FormData();
-        formData.append('image_file', file);
-        formData.append('size', 'auto');
+        const formData = createFormData(file);
 
         console.log('Sending request to:', API_URL);
+        console.log('Feature:', currentFeature);
         console.log('File size:', file.size, 'bytes');
-        console.log('File type:', file.type);
 
-        // Call remove.bg API via secure proxy
+        // Call enhanced remove.bg API
         const response = await fetch(API_URL, {
             method: 'POST',
             body: formData
@@ -167,7 +455,7 @@ async function processImageFile(file) {
 }
 
 async function processImageUrl(url) {
-    currentImageName = 'background-removed.png';
+    currentImageName = generateFileName('image-from-url');
     
     try {
         showLoading();
@@ -175,15 +463,14 @@ async function processImageUrl(url) {
         // Show original image
         originalImage.src = url;
         
-                // Create FormData for API request
-        const formData = new FormData();
-        formData.append('image_url', url);
-        formData.append('size', 'auto');
+        // Create FormData for API request
+        const formData = createFormDataFromUrl(url);
 
         console.log('Sending URL request to:', API_URL);
+        console.log('Feature:', currentFeature);
         console.log('Image URL:', url);
 
-        // Call remove.bg API via secure proxy
+        // Call enhanced remove.bg API
         const response = await fetch(API_URL, {
             method: 'POST',
             body: formData
@@ -208,6 +495,167 @@ async function processImageUrl(url) {
     }
 }
 
+async function processBatchImages(files) {
+    try {
+        showLoading();
+        batchProgress.style.display = 'block';
+        batchResults = [];
+        
+        const total = files.length;
+        let completed = 0;
+        
+        progressText.textContent = `0 / ${total} images processed`;
+        progressFill.style.width = '0%';
+        
+        // Process images in parallel (max 3 at a time to avoid rate limits)
+        const batchSize = 3;
+        for (let i = 0; i < files.length; i += batchSize) {
+            const batch = files.slice(i, i + batchSize);
+            const promises = batch.map(file => processSingleBatchImage(file));
+            
+            const results = await Promise.allSettled(promises);
+            
+            results.forEach((result, index) => {
+                completed++;
+                const file = batch[index];
+                
+                if (result.status === 'fulfilled') {
+                    batchResults.push({
+                        name: file.name,
+                        originalFile: file,
+                        processedBlob: result.value,
+                        success: true
+                    });
+                } else {
+                    batchResults.push({
+                        name: file.name,
+                        originalFile: file,
+                        error: result.reason.message,
+                        success: false
+                    });
+                }
+                
+                // Update progress
+                const progress = (completed / total) * 100;
+                progressFill.style.width = `${progress}%`;
+                progressText.textContent = `${completed} / ${total} images processed`;
+            });
+        }
+        
+        showBatchResults();
+        
+    } catch (error) {
+        console.error('Error processing batch:', error);
+        showError(error.message);
+    }
+}
+
+async function processSingleBatchImage(file) {
+    // Validate file size
+    if (file.size > 12 * 1024 * 1024) {
+        throw new Error(`${file.name}: File too large (max 12MB)`);
+    }
+
+    // Create FormData for API request
+    const formData = createFormData(file);
+
+    // Call API
+    const response = await fetch(API_URL, {
+        method: 'POST',
+        body: formData
+    });
+    
+    if (!response.ok) {
+        const errorMsg = await getErrorMessage(response);
+        throw new Error(`${file.name}: ${errorMsg}`);
+    }
+    
+    return await response.blob();
+}
+
+function createFormData(file) {
+    const formData = new FormData();
+    formData.append('image_file', file);
+    formData.append('size', 'auto');
+    formData.append('feature', currentFeature);
+    
+    // Add feature-specific parameters
+    switch (currentFeature) {
+        case 'custom-bg':
+            if (currentBackgroundFile) {
+                formData.append('bg_image_file', currentBackgroundFile);
+            }
+            break;
+        case 'bg-color':
+            if (bgColorPicker) {
+                formData.append('bg_color', bgColorPicker.value.replace('#', ''));
+            }
+            break;
+        case 'blur-bg':
+            if (blurIntensity) {
+                formData.append('blur_intensity', blurIntensity.value);
+            }
+            break;
+        case 'ai-shadow':
+            if (shadowType) {
+                formData.append('shadow_type', shadowType.value);
+            }
+            if (shadowOpacity) {
+                formData.append('shadow_opacity', shadowOpacity.value);
+            }
+            break;
+        case 'product-editor':
+            if (productType) {
+                formData.append('type', productType.value);
+            }
+            break;
+    }
+    
+    return formData;
+}
+
+function createFormDataFromUrl(url) {
+    const formData = new FormData();
+    formData.append('image_url', url);
+    formData.append('size', 'auto');
+    formData.append('feature', currentFeature);
+    
+    // Add feature-specific parameters (same as createFormData)
+    switch (currentFeature) {
+        case 'bg-color':
+            if (bgColorPicker) {
+                formData.append('bg_color', bgColorPicker.value.replace('#', ''));
+            }
+            break;
+        case 'blur-bg':
+            if (blurIntensity) {
+                formData.append('blur_intensity', blurIntensity.value);
+            }
+            break;
+        case 'ai-shadow':
+            if (shadowType) {
+                formData.append('shadow_type', shadowType.value);
+            }
+            if (shadowOpacity) {
+                formData.append('shadow_opacity', shadowOpacity.value);
+            }
+            break;
+        case 'product-editor':
+            if (productType) {
+                formData.append('type', productType.value);
+            }
+            break;
+    }
+    
+    return formData;
+}
+
+function generateFileName(originalName) {
+    const baseName = originalName.replace(/\.[^/.]+$/, '');
+    const featureSuffix = currentFeature.replace('-', '_');
+    return `${baseName}_${featureSuffix}.png`;
+}
+
 // UI State Management
 function showLoading() {
     hideAllSections();
@@ -217,6 +665,12 @@ function showLoading() {
 function showResult() {
     hideAllSections();
     resultSection.style.display = 'block';
+}
+
+function showBatchResults() {
+    hideAllSections();
+    batchResultsSection.style.display = 'block';
+    renderBatchResults();
 }
 
 function showError(message) {
@@ -229,7 +683,39 @@ function hideAllSections() {
     uploadSection.style.display = 'none';
     loadingSection.style.display = 'none';
     resultSection.style.display = 'none';
+    batchResultsSection.style.display = 'none';
     errorSection.style.display = 'none';
+}
+
+function renderBatchResults() {
+    batchResultsGrid.innerHTML = '';
+    
+    batchResults.forEach((result, index) => {
+        const item = document.createElement('div');
+        item.className = 'batch-result-item';
+        
+        if (result.success) {
+            const imageUrl = URL.createObjectURL(result.processedBlob);
+            item.innerHTML = `
+                <img src="${imageUrl}" alt="${result.name}" class="batch-result-image">
+                <div class="batch-result-name">${result.name}</div>
+                <div class="batch-result-actions">
+                    <button class="batch-download-btn" onclick="downloadBatchItem(${index})">Download</button>
+                </div>
+            `;
+        } else {
+            item.innerHTML = `
+                <div class="batch-result-error">
+                    <div class="batch-result-name">${result.name}</div>
+                    <div class="batch-error-message">${result.error}</div>
+                </div>
+            `;
+            item.style.background = 'rgba(255, 0, 0, 0.1)';
+            item.style.borderColor = 'rgba(255, 0, 0, 0.3)';
+        }
+        
+        batchResultsGrid.appendChild(item);
+    });
 }
 
 function resetApp() {
@@ -239,6 +725,19 @@ function resetApp() {
     // Reset form inputs
     fileInput.value = '';
     urlInput.value = '';
+    if (batchFileInput) batchFileInput.value = '';
+    if (bgFileInput) bgFileInput.value = '';
+    
+    // Reset background file
+    currentBackgroundFile = null;
+    if (bgDropZone) {
+        bgDropZone.innerHTML = '<span>Click to upload background image</span>';
+    }
+    
+    // Hide batch progress
+    if (batchProgress) {
+        batchProgress.style.display = 'none';
+    }
     
     // Clean up object URLs
     if (originalImage.src.startsWith('blob:')) {
@@ -248,27 +747,71 @@ function resetApp() {
         URL.revokeObjectURL(resultImage.src);
     }
     
+    // Clean up batch results
+    batchResults.forEach(result => {
+        if (result.processedBlob) {
+            URL.revokeObjectURL(URL.createObjectURL(result.processedBlob));
+        }
+    });
+    batchResults = [];
+    
     // Reset state
     currentImageBlob = null;
-    currentImageName = 'background-removed.png';
+    currentImageName = 'processed-image.png';
 }
 
-// Download Handler
+// Download Handlers
 function handleDownload() {
     if (!currentImageBlob) {
         showError('No image available for download');
         return;
     }
     
-    const url = URL.createObjectURL(currentImageBlob);
+    downloadBlob(currentImageBlob, currentImageName);
+}
+
+function downloadBatchItem(index) {
+    const result = batchResults[index];
+    if (result && result.success) {
+        const fileName = generateFileName(result.name);
+        downloadBlob(result.processedBlob, fileName);
+    }
+}
+
+function handleDownloadAll() {
+    const successfulResults = batchResults.filter(r => r.success);
+    if (successfulResults.length === 0) {
+        showError('No successful results to download');
+        return;
+    }
+    
+    successfulResults.forEach((result, index) => {
+        setTimeout(() => {
+            const fileName = generateFileName(result.name);
+            downloadBlob(result.processedBlob, fileName);
+        }, index * 500); // Stagger downloads
+    });
+}
+
+function downloadBlob(blob, fileName) {
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = currentImageName;
+    a.download = fileName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 }
+
+// Global function for batch download buttons (called from HTML)
+window.downloadBatchItem = function(index) {
+    const result = batchResults[index];
+    if (result && result.success) {
+        const fileName = generateFileName(result.name);
+        downloadBlob(result.processedBlob, fileName);
+    }
+};
 
 // Utility Functions
 function isValidImageFile(file) {
@@ -294,12 +837,8 @@ async function getErrorMessage(response) {
         // Handle specific remove.bg error codes
         switch (response.status) {
             case 400:
-                // Check for specific error details from our API proxy
                 if (errorData.details) {
-                    if (typeof errorData.details === 'string') {
-                        return errorData.details;
-                    }
-                    return errorData.details || 'Invalid image format or size. Please try a different image.';
+                    return errorData.details;
                 }
                 return errorData.error || 'Invalid image format or size. Please try a different image.';
             case 402:
@@ -318,26 +857,6 @@ async function getErrorMessage(response) {
         return `Network error (${response.status}). Please check your connection and try again.`;
     }
 }
-
-// Add some visual feedback for better UX
-function addVisualFeedback() {
-    // Add pulse animation to upload icon when page loads
-    const uploadIcon = document.querySelector('.upload-icon');
-    if (uploadIcon) {
-        uploadIcon.style.animation = 'bounce 2s infinite';
-    }
-    
-    // Add smooth transitions for section changes
-    const sections = [uploadSection, loadingSection, resultSection, errorSection];
-    sections.forEach(section => {
-        if (section) {
-            section.style.transition = 'opacity 0.3s ease-in-out';
-        }
-    });
-}
-
-// Initialize visual feedback
-document.addEventListener('DOMContentLoaded', addVisualFeedback);
 
 // Setup comparison events for hold-to-compare functionality
 function setupComparisonEvents() {
@@ -378,7 +897,6 @@ function startHolding(e) {
     // Add slight delay to prevent accidental triggers
     holdTimeout = setTimeout(() => {
         if (isHolding) {
-            // Additional feedback can be added here
             console.log('Hold confirmed');
         }
     }, 100);
@@ -401,7 +919,18 @@ function stopHolding(e) {
     
     // Hide original image
     originalImage.classList.remove('show');
-    currentViewLabel.textContent = 'Background Removed';
+    
+    // Reset label based on current feature
+    const featureLabels = {
+        'remove-bg': 'Background Removed',
+        'magic-brush': 'Magic Brush Applied',
+        'custom-bg': 'Custom Background Added',
+        'blur-bg': 'Background Blurred',
+        'ai-shadow': 'AI Shadow Added',
+        'bg-color': 'Background Color Added'
+    };
+    
+    currentViewLabel.textContent = featureLabels[currentFeature] || 'Processed';
     currentViewLabel.classList.remove('showing-original');
 }
 
